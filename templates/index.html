@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Meu iLovePDF</title>
+    <link rel="stylesheet" href="/static/estilo.css">
+</head>
+<body>
+    <h1>Meu iLovePDF</h1>
+    <section>
+        <h2>Juntar PDFs</h2>
+        <form action="/juntar_pdf" method="post" enctype="multipart/form-data">
+            <input type="file" name="files" multiple accept="application/pdf" required>
+            <button type="submit">Juntar</button>
+        </form>
+    </section>
+    <section>
+        <h2>PDF para DOCX</h2>
+        <form action="/pdf_para_docx" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept="application/pdf" required>
+            <button type="submit">Converter</button>
+        </form>
+    </section>
+    <section>
+        <h2>Imagens para PDF</h2>
+        <form action="/imagem_para_pdf" method="post" enctype="multipart/form-data">
+            <input type="file" name="files" multiple accept="image/*" required>
+            <button type="submit">Converter</button>
+        </form>
+    </section>
+</body>
+</html>

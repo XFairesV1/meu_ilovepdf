@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+PyPDF2
+pdf2docx
+python-multipart
+jinja2
+Pillow
