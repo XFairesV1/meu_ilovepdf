@@ -1,32 +1,67 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Meu iLovePDF</title>
-    <link rel="stylesheet" href="/static/estilo.css">
+  <meta charset="UTF-8">
+  <title>Meu iLovePDF</title>
+  <!-- Bootstrap -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-..."
+    crossorigin="anonymous"
+  >
+  <!-- FontAwesome -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    rel="stylesheet"
+    integrity="sha384-..."
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="/static/estilo.css">
 </head>
-<body>
-    <h1>Meu iLovePDF</h1>
-    <section>
-        <h2>Juntar PDFs</h2>
-        <form action="/juntar_pdf" method="post" enctype="multipart/form-data">
-            <input type="file" name="files" multiple accept="application/pdf" required>
-            <button type="submit">Juntar</button>
-        </form>
-    </section>
-    <section>
-        <h2>PDF para DOCX</h2>
-        <form action="/pdf_para_docx" method="post" enctype="multipart/form-data">
-            <input type="file" name="file" accept="application/pdf" required>
-            <button type="submit">Converter</button>
-        </form>
-    </section>
-    <section>
-        <h2>Imagens para PDF</h2>
-        <form action="/imagem_para_pdf" method="post" enctype="multipart/form-data">
-            <input type="file" name="files" multiple accept="image/*" required>
-            <button type="submit">Converter</button>
-        </form>
-    </section>
+<body class="bg-light">
+  <nav class="navbar navbar-expand-lg navbar-white bg-white shadow-sm mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="/">
+        <img src="/static/img/logo.png" alt="Logo" height="40">
+        <span class="ms-2 fw-bold">Meu iLovePDF</span>
+      </a>
+    </div>
+  </nav>
+
+  <div class="container mb-5">
+    <div class="row gy-4">
+      {% for p in plugins %}
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm hover-scale">
+          <div class="card-body text-center">
+            <i class="{{ p.icon_class }} fa-3x mb-3"></i>
+            <h5 class="card-title">{{ p.display_name }}</h5>
+            <p class="card-text">{{ p.description }}</p>
+            <form action="{{ p.route }}" method="post" enctype="multipart/form-data">
+              <input type="file" name="files" {% if not p.multiple %} name="file"{% endif %}
+                     {% if p.multiple %} multiple{% endif %}
+                     accept="{{ p.accept }}" required class="form-control mb-2">
+              <button type="submit" class="btn btn-primary w-100">Ok</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <footer class="bg-white py-4 shadow-sm">
+    <div class="container text-center text-muted">
+      &copy; 2025 Meu iLovePDF – Feito com ❤️ por você.
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-..."
+    crossorigin="anonymous"
+  ></script>
 </body>
 </html>

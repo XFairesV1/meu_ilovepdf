@@ -1,69 +1,47 @@
 import os
-import shutil
 import uuid
-
-from fastapi import FastAPI, File, UploadFile
+import importlib
+from fastapi import FastAPI, File, UploadFile, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
-from starlette.requests import Request
 
-from funcoes.juntar_pdf import juntar_pdfs
-from funcoes.pdf_para_docx import pdf_para_docx
-from funcoes.imagem_para_pdf import imagens_para_pdf
+# Cria app
+app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
-# Caminho base do projeto (diretório do arquivo main.py)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Diretórios absolutos
-STATIC_DIR = os.path.join(BASE_DIR, 'static')
-TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
-UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
-
-# Cria diretório de uploads
+# Pasta de uploads
+UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-app = FastAPI()
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+# Carrega dinamicamente as funções de funcoes/
+from funcoes import plugins  # plugins é uma lista de metadata dos módulos
+
+# Gera rotas dinamicamente
+for plugin in plugins:
+    route = plugin["route"]
+    func = plugin["run"]
+    multiple = plugin["multiple"]
+    accept = plugin["accept"]
+    output_ext = plugin["output_ext"]
+
+    async def handler(request: Request, files: list[UploadFile] = File(...), __func=func, __multiple=multiple, __output_ext=output_ext):
+        paths = []
+        # se função única, pega apenas o primeiro
+        upload_list = files if __multiple else [files[0]]
+        for f in upload_list:
+            path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{f.filename}")
+            with open(path, "wb") as buf:
+                buf.write(await f.read())
+            paths.append(path)
+        out_path = os.path.join(UPLOAD_DIR, f"{plugin['name']}_{uuid.uuid4()}.{__output_ext}")
+        __func(paths, out_path)
+        return FileResponse(out_path, media_type=plugin["media_type"], filename=f"{plugin['name']}.{__output_ext}")
+
+    app.post(route)(handler)
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-@app.post("/juntar_pdf")
-async def route_juntar_pdf(files: list[UploadFile] = File(...)):
-    file_paths = []
-    for file in files:
-        file_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{file.filename}")
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        file_paths.append(file_path)
-    output_path = os.path.join(UPLOAD_DIR, f"merged_{uuid.uuid4()}.pdf")
-    juntar_pdfs(file_paths, output_path)
-    return FileResponse(output_path, media_type="application/pdf", filename="merged.pdf")
-
-@app.post("/pdf_para_docx")
-async def route_pdf_para_docx(file: UploadFile = File(...)):
-    input_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{file.filename}")
-    with open(input_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    output_path = os.path.join(UPLOAD_DIR, f"converted_{uuid.uuid4()}.docx")
-    pdf_para_docx(input_path, output_path)
-    return FileResponse(
-        output_path,
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        filename="converted.docx"
-    )
-
-@app.post("/imagem_para_pdf")
-async def route_imagem_para_pdf(files: list[UploadFile] = File(...)):
-    file_paths = []
-    for file in files:
-        file_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}_{file.filename}")
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        file_paths.append(file_path)
-    output_path = os.path.join(UPLOAD_DIR, f"images_{uuid.uuid4()}.pdf")
-    imagens_para_pdf(file_paths, output_path)
-    return FileResponse(output_path, media_type="application/pdf", filename="images.pdf")
+    # envia lista de plugins para template
+    return templates.TemplateResponse("index.html", {"request": request, "plugins": plugins})
